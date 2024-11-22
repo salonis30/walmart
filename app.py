@@ -26,28 +26,6 @@ st.markdown("""
             font-weight: bold;
             margin-bottom: 15px;
         }
-        .subheader {
-            font-size: 22px;
-            color: black;
-            margin-bottom: 20px;
-        }
-        .box {
-            background-color: #F5F5DC;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        .stButton button {
-            background-color: #81717A;
-            color: white;
-            font-weight: bold;
-            border-radius: 5px;
-            border: none;
-            padding: 8px 15px;
-        }
-        .stApp {
-            background: linear-gradient(135deg, #F5F5DC, #81717A, #9D8CA1);
-        }
         .footer {
             font-size: 14px;
             color: black;
@@ -103,7 +81,8 @@ def data_visualization_page():
 
     # Upload dataset dynamically
     uploaded_file = st.file_uploader("Upload your Walmart dataset (CSV)", type=["csv"])
-    if uploaded_file is not None:
+    
+    if uploaded_file:
         data = pd.read_csv(uploaded_file)
 
         # Choose between Static Visualization or Dynamic Visualization
@@ -163,30 +142,8 @@ def data_visualization_page():
                         plot_graph(chart_type, selected_column, user_data_2, "Second Dataset")
                 else:
                     st.warning("No common columns found between the datasets.")
-            else:
-                st.warning("Please upload both CSV files to proceed.")
-
-        # User Guide Section
-        st.sidebar.markdown("### User Guide")
-        st.sidebar.write("""
-            1. Login with your credentials.
-            2. Select a visualization type.
-            3. In static data visualization, choose your desired columns and parameters for analysis.
-            4. In dynamic data visualization, browse CSV files to compare and do analysis based on selected parameters.
-        """)
-
-        # About Us Section
-        st.sidebar.markdown("### About Us")
-        st.sidebar.write("""
-            We are dedicated to providing and analyzing Walmart's operations and strategies to understand its role as a global retail leader.
-        """)
-
-        # Logout button
-        if st.sidebar.button("Logout"):
-            st.session_state["logged_in"] = False
-            st.success("Logged out successfully!")
     else:
-        st.warning("Please upload a dataset to proceed.")
+        st.info("Please upload a dataset to start the analysis.")
 
 # Main app logic: Check login state and display appropriate page
 if "logged_in" not in st.session_state:
