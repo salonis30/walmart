@@ -3,6 +3,25 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+# Load the dataset dynamically, with user-uploaded fallback
+default_file_path = r"C:\\Users\\salon\\Downloads\\freshwalmart\\Walmart_cleaned_filtered_limited.csv"
+try:
+    data = pd.read_csv(default_file_path)
+    st.success("Default dataset loaded successfully!")
+except FileNotFoundError:
+    st.warning("Default dataset not found. Please upload a CSV file.")
+
+# Option for user to upload a dataset if the default fails
+uploaded_file = st.file_uploader("Upload a CSV file to use instead", type=["csv"])
+if uploaded_file:
+    data = pd.read_csv(uploaded_file)
+    st.success("Uploaded dataset loaded successfully!")
+
+# Ensure data exists before proceeding
+if 'data' not in locals():
+    st.error("No dataset available to proceed. Please check the default file path or upload a dataset.")
+    st.stop()
+
 # Set page configuration for better layout
 st.set_page_config(page_title="Data Visualization Dashboard", layout="wide")
 
@@ -101,92 +120,85 @@ def plot_graph(chart_type, column, dataset, title):
 def data_visualization_page():
     st.markdown("<h1 class='main-title'>Data Visualization Dashboard</h1>", unsafe_allow_html=True)
 
-    # Upload dataset dynamically
-    uploaded_file = st.file_uploader("Upload your Walmart dataset (CSV)", type=["csv"])
-    if uploaded_file is not None:
-        data = pd.read_csv(uploaded_file)
+    # Choose between Static Visualization or Dynamic Visualization
+    visualization_type = st.sidebar.selectbox("Choose Visualization Type", ["Static Visualization", "Dynamic Visualization"])
 
-        # Choose between Static Visualization or Dynamic Visualization
-        visualization_type = st.sidebar.selectbox("Choose Visualization Type", ["Static Visualization", "Dynamic Visualization"])
+    # Static Data Visualization
+    if visualization_type == "Static Visualization":
+        st.markdown("<h2 class='header'>Static Data Visualization</h2>", unsafe_allow_html=True)
+        static_column = st.selectbox("Select Column for Static Visualization", data.columns)
+        static_chart_type = st.selectbox("Select Static Chart Type", ["Donut Chart", "Bar Graph", "Line Graph", "Pie Chart", "Histogram"])
+        plot_graph(static_chart_type, static_column, data, "Static Data")
 
-        # Static Data Visualization
-        if visualization_type == "Static Visualization":
-            st.markdown("<h2 class='header'>Static Data Visualization</h2>", unsafe_allow_html=True)
-            static_column = st.selectbox("Select Column for Static Visualization", data.columns)
-            static_chart_type = st.selectbox("Select Static Chart Type", ["Donut Chart", "Bar Graph", "Line Graph", "Pie Chart", "Histogram"])
-            plot_graph(static_chart_type, static_column, data, "Static Data")
+    # Dynamic Data Visualization
+    elif visualization_type == "Dynamic Visualization":
+        st.markdown("<h2 class='header'>Dynamic Data Visualization</h2>", unsafe_allow_html=True)
 
-        # Dynamic Data Visualization
-        elif visualization_type == "Dynamic Visualization":
-            st.markdown("<h2 class='header'>Dynamic Data Visualization</h2>", unsafe_allow_html=True)
+        # File upload section
+        st.write("### Upload Two CSV Files")
+        uploaded_file_1 = st.file_uploader("Choose the first CSV file", type=["csv"])
+        uploaded_file_2 = st.file_uploader("Choose the second CSV file", type=["csv"])
 
-            # File upload section
-            st.write("### Upload Two CSV Files")
-            uploaded_file_1 = st.file_uploader("Choose the first CSV file", type=["csv"], key="dynamic_1")
-            uploaded_file_2 = st.file_uploader("Choose the second CSV file", type=["csv"], key="dynamic_2")
+        if uploaded_file_1 and uploaded_file_2:
+            user_data_1 = pd.read_csv(uploaded_file_1)
+            user_data_2 = pd.read_csv(uploaded_file_2)
 
-            if uploaded_file_1 and uploaded_file_2:
-                user_data_1 = pd.read_csv(uploaded_file_1)
-                user_data_2 = pd.read_csv(uploaded_file_2)
+            st.write("First Dataset Preview:")
+            st.dataframe(user_data_1)
 
-                st.write("First Dataset Preview:")
-                st.dataframe(user_data_1)
+            st.write("Second Dataset Preview:")
+            st.dataframe(user_data_2)
 
-                st.write("Second Dataset Preview:")
-                st.dataframe(user_data_2)
+            # Display comparison between datasets
+            st.write("### Data Comparison Summary")
+            comparison_summary = {
+                "First Dataset Rows": len(user_data_1),
+                "Second Dataset Rows": len(user_data_2),
+                "Common Columns": list(set(user_data_1.columns).intersection(user_data_2.columns)),
+            }
+            st.json(comparison_summary)
 
-                # Display comparison between datasets
-                st.write("### Data Comparison Summary")
-                comparison_summary = {
-                    "First Dataset Rows": len(user_data_1),
-                    "Second Dataset Rows": len(user_data_2),
-                    "Common Columns": list(set(user_data_1.columns).intersection(user_data_2.columns)),
-                }
-                st.json(comparison_summary)
+            # Select column for visualization
+            common_columns = comparison_summary["Common Columns"]
+            if common_columns:
+                selected_column = st.selectbox("Select Column for Visualization", common_columns)
+                chart_type = st.selectbox("Select Chart Type", ["Donut Chart", "Bar Graph", "Line Graph", "Pie Chart", "Histogram"])
 
-                # Select column for visualization
-                common_columns = comparison_summary["Common Columns"]
-                if common_columns:
-                    selected_column = st.selectbox("Select Column for Visualization", common_columns)
-                    chart_type = st.selectbox("Select Chart Type", ["Donut Chart", "Bar Graph", "Line Graph", "Pie Chart", "Histogram"])
+                # Side-by-side comparison
+                st.markdown("<h2 class='header'>Graph Comparison</h2>", unsafe_allow_html=True)
+                col1, col2 = st.columns(2)
 
-                    # Side-by-side comparison
-                    st.markdown("<h2 class='header'>Graph Comparison</h2>", unsafe_allow_html=True)
-                    col1, col2 = st.columns(2)
+                with col1:
+                    st.write("First Dataset")
+                    plot_graph(chart_type, selected_column, user_data_1, "First Dataset")
 
-                    with col1:
-                        st.write("First Dataset")
-                        plot_graph(chart_type, selected_column, user_data_1, "First Dataset")
-
-                    with col2:
-                        st.write("Second Dataset")
-                        plot_graph(chart_type, selected_column, user_data_2, "Second Dataset")
-                else:
-                    st.warning("No common columns found between the datasets.")
+                with col2:
+                    st.write("Second Dataset")
+                    plot_graph(chart_type, selected_column, user_data_2, "Second Dataset")
             else:
-                st.warning("Please upload both CSV files to proceed.")
+                st.warning("No common columns found between the datasets.")
+        else:
+            st.warning("Please upload both CSV files to proceed.")
 
-        # User Guide Section
-        st.sidebar.markdown("### User Guide")
-        st.sidebar.write("""
-            1. Login with your credentials.
-            2. Select a visualization type.
-            3. In static data visualization, choose your desired columns and parameters for analysis.
-            4. In dynamic data visualization, browse CSV files to compare and do analysis based on selected parameters.
-        """)
+    # User Guide Section
+    st.sidebar.markdown("### User Guide")
+    st.sidebar.write("""
+        1. Login with your credentials.
+        2. Select a visualization type.
+        3. In static data visualization, choose your desired columns and parameters for analysis.
+        4. In dynamic data visualization, browse CSV files to compare and analyze based on selected parameters.
+    """)
 
-        # About Us Section
-        st.sidebar.markdown("### About Us")
-        st.sidebar.write("""
-            We are dedicated to providing and analyzing Walmart's operations and strategies to understand its role as a global retail leader.
-        """)
+    # About Us Section
+    st.sidebar.markdown("### About Us")
+    st.sidebar.write("""
+        We are dedicated to providing and analyzing Walmart's operations and strategies to understand its role as a global retail leader.
+    """)
 
-        # Logout button
-        if st.sidebar.button("Logout"):
-            st.session_state["logged_in"] = False
-            st.success("Logged out successfully!")
-    else:
-        st.warning("Please upload a dataset to proceed.")
+    # Logout button
+    if st.sidebar.button("Logout"):
+        st.session_state["logged_in"] = False
+        st.success("Logged out successfully!")
 
 # Main app logic: Check login state and display appropriate page
 if "logged_in" not in st.session_state:
